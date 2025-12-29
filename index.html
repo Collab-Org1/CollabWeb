@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Collab - Welcome</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0f111a; --panel:#161a26; --panel2:#1b2030; --text:#e8eaf1; --muted:#aab0c0;
+      --accent:#6d5efc; --accent2:#8b7dff; --border:#2a3146;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Segoe UI,Arial;background:radial-gradient(1200px 800px at 20% 10%, #1a1f33, var(--bg));
+      color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+    .card{width:min(980px,100%); background:linear-gradient(180deg,var(--panel),#0f111a); border:1px solid var(--border);
+      border-radius:20px; overflow:hidden; box-shadow:0 20px 80px rgba(0,0,0,.45);}
+    .top{display:flex; gap:24px; padding:28px;}
+    .brand{flex:1}
+    .logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:grid;place-items:center;font-weight:800}
+    h1{margin:14px 0 6px; font-size:34px; letter-spacing:-.02em}
+    p{margin:0;color:var(--muted); line-height:1.5}
+    .actions{display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; margin-top:18px}
+    .btn{border:1px solid var(--border); background:var(--panel2); color:var(--text); padding:12px 14px; border-radius:12px;
+      cursor:pointer; font-weight:600; transition:.15s}
+    .btn:hover{transform:translateY(-1px); border-color:#3b4666}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none}
+    .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:0 28px 28px}
+    .tile{background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:16px; padding:14px}
+    .tile h3{margin:0 0 6px; font-size:14px}
+    .tile p{font-size:13px}
+    @media (max-width:860px){ .grid{grid-template-columns:1fr} .top{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="brand">
+        <div class="logo">C</div>
+        <h1>Collab</h1>
+        <p>A Teams‑style workspace for chat, channels, Calls.</p>
+        <div class="actions">
+          <button class="btn primary" onclick="location.href='login.html'">Login</button>
+          <button class="btn" onclick="location.href='register.html'">Register</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="tile">
+        <h3>Channels + Chat</h3>
+        <p>Left sidebar tabs, channel list, message feed, composer.</p>
+      </div>
+      <div class="tile">
+        <h3>Security‑ready</h3>
+        <p>Room for roles, audit logs, rate limits once backend is wired.</p>
+      </div>
+      <div class="tile">
+        <h3>Calls </h3>
+        <p>Be able to call and share your screen with friends or family.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

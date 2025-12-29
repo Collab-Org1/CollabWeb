@@ -1,0 +1,459 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Collab - App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:,">
+  <style>
+    :root{
+      --bg:#0f111a; --panel:#161a26; --panel2:#1b2030; --panel3:#0f1320;
+      --text:#e8eaf1; --muted:#aab0c0; --accent:#6d5efc; --border:#2a3146;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Segoe UI,Arial;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+    .app{display:grid;grid-template-columns:76px 280px 1fr;height:100vh}
+
+    .rail{background:linear-gradient(180deg,var(--panel),#101423);border-right:1px solid var(--border);
+      display:flex;flex-direction:column;gap:10px;padding:12px;align-items:center}
+    .rail .brand{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#6d5efc,#8b7dff);
+      display:grid;place-items:center;font-weight:900;margin-bottom:6px}
+    .tab{width:52px;height:52px;border-radius:16px;border:1px solid transparent;background:transparent;color:var(--text);
+      display:grid;place-items:center;cursor:pointer;transition:.15s}
+    .tab:hover{background:rgba(255,255,255,.05);border-color:var(--border)}
+    .tab.active{background:rgba(109,94,252,.18);border-color:rgba(109,94,252,.35)}
+    .tab small{font-size:11px;color:var(--muted);margin-top:6px;display:block}
+    .spacer{flex:1}
+
+    .side{background:var(--panel2);border-right:1px solid var(--border);display:flex;flex-direction:column}
+    .sideHeader{padding:16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .sideHeader .left{min-width:0}
+    .sideHeader .title{font-weight:800;letter-spacing:-.01em}
+    .sideHeader .sub{color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sideHeader .btn{padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);
+      color:var(--text);cursor:pointer;font-weight:700}
+    .sideHeader .btn:hover{border-color:#3b4666}
+
+    .sideSection{padding:12px 10px 8px;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:space-between}
+    .channels{padding:8px 10px 12px;overflow:auto}
+    .channel{padding:10px 10px;border-radius:12px;cursor:pointer;color:var(--text);border:1px solid transparent}
+    .channel:hover{background:rgba(255,255,255,.04);border-color:var(--border)}
+    .channel.active{background:rgba(109,94,252,.16);border-color:rgba(109,94,252,.35)}
+    .channel .meta{color:var(--muted);font-size:12px;margin-top:3px}
+
+    .main{display:flex;flex-direction:column;background:radial-gradient(1200px 700px at 90% 10%, rgba(109,94,252,.18), transparent 55%)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);
+      background:rgba(15,17,26,.55);backdrop-filter: blur(10px)}
+    .topbar .room{font-weight:800}
+    .topbar .sub{color:var(--muted);font-size:12px;margin-top:3px}
+    .tools{display:flex;gap:8px;align-items:center}
+    .pill{padding:9px 10px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text);
+      cursor:pointer;font-weight:700}
+    .pill:hover{border-color:#3b4666}
+
+    .page{display:none; height:100%}
+    .page.active{display:flex}
+
+    .chatWrap{display:flex;flex-direction:column;flex:1;min-height:0}
+    .chatArea{display:flex;flex-direction:column;gap:10px; padding:16px; overflow:auto; flex:1;min-height:0}
+    .emptyState{margin:auto;max-width:540px;text-align:center;border:1px dashed var(--border);border-radius:18px;padding:22px;background:rgba(255,255,255,.02)}
+    .emptyState h2{margin:0 0 8px;font-size:18px}
+    .emptyState p{margin:0;color:var(--muted);line-height:1.5}
+
+    .bubble{max-width:min(720px, 90%); padding:10px 12px;border-radius:16px;border:1px solid var(--border);
+      background:rgba(255,255,255,.03)}
+    .bubble.me{margin-left:auto;background:rgba(109,94,252,.16);border-color:rgba(109,94,252,.35)}
+    .bubble .who{font-size:12px;color:var(--muted);margin-bottom:4px}
+
+    .composer{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--border);background:rgba(15,17,26,.65);
+      backdrop-filter: blur(10px)}
+    .composer input{flex:1;padding:12px 12px;border-radius:14px;border:1px solid var(--border);background:var(--panel3);color:var(--text)}
+    .composer button{padding:12px 14px;border-radius:14px;border:none;background:linear-gradient(135deg,#6d5efc,#8b7dff);
+      color:white;font-weight:900;cursor:pointer}
+    .composer button:active{transform:translateY(1px)}
+    .composer button:disabled{opacity:.5;cursor:not-allowed}
+
+    .modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;place-items:center;padding:18px}
+    .modal{width:min(520px,100%);background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px}
+    .modal h3{margin:0 0 10px}
+    .modal label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    .modal input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0f1320;color:var(--text)}
+    .modal .row{display:flex;gap:10px;margin-top:12px}
+    .modal .row button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:#1b2030;color:var(--text);
+      cursor:pointer;font-weight:800}
+    .modal .row .primary{border:none;background:linear-gradient(135deg,#6d5efc,#8b7dff)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="brand">C</div>
+
+      <button class="tab active" data-tab="chat" onclick="setTab('chat', this)">💬<small>Chat</small></button>
+      <button class="tab" data-tab="calls" onclick="setTab('calls', this)">🎧<small>Calls</small></button>
+      <button class="tab" data-tab="files" onclick="setTab('files', this)">📁<small>Files</small></button>
+      <button class="tab" data-tab="settings" onclick="setTab('settings', this)">⚙️<small>Settings</small></button>
+
+      <div class="spacer"></div>
+      <button class="tab" onclick="logout()">🚪<small>Logout</small></button>
+    </aside>
+
+    <aside class="side" id="sidePanel">
+      <div class="sideHeader">
+        <div class="left">
+          <div class="title" id="workspaceTitle">Workspace</div>
+          <div class="sub" id="userLine">Signed in</div>
+        </div>
+        <button class="btn" onclick="openModal('createChannelModal')">+ Channel</button>
+      </div>
+
+      <div class="sideSection">
+        <span>Channels</span>
+        <span id="channelsStatus">—</span>
+      </div>
+
+      <div class="channels" id="channelList"></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div style="min-width:0">
+          <div class="room" id="roomTitle">Select a channel</div>
+          <div class="sub" id="roomSub">Loading…</div>
+        </div>
+
+        <div class="tools">
+          <button class="pill" onclick="openSearch()">Search</button>
+          <button class="pill" onclick="openMembers()">Members</button>
+          <button class="pill" onclick="startCall()">Start call</button>
+        </div>
+      </div>
+
+      <section class="page active" id="page-chat" style="flex-direction:column;">
+        <div class="chatWrap">
+          <div class="chatArea" id="chatArea">
+            <div class="emptyState" id="emptyState">
+              <h2>Choose a channel to start</h2>
+              <p>Once you pick a channel, messages will load and live chat will connect.</p>
+            </div>
+          </div>
+
+          <div class="composer">
+            <input id="msg" placeholder="Type a message…" disabled
+                   onkeydown="if(event.key==='Enter') sendMessage()">
+            <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-calls"><div style="padding:24px;color:var(--muted)"><h2 style="margin:0 0 8px;color:var(--text)">Calls</h2><p style="margin:0">Later: WebRTC</p></div></section>
+      <section class="page" id="page-files"><div style="padding:24px;color:var(--muted)"><h2 style="margin:0 0 8px;color:var(--text)">Files</h2><p style="margin:0">Later: uploads</p></div></section>
+      <section class="page" id="page-settings"><div style="padding:24px;color:var(--muted)"><h2 style="margin:0 0 8px;color:var(--text)">Settings</h2><p style="margin:0">Later: profile</p></div></section>
+    </main>
+  </div>
+
+  <div class="modalOverlay" id="createChannelModal">
+    <div class="modal">
+      <h3>Create channel</h3>
+      <label>Channel name</label>
+      <input id="newChannelName" placeholder="e.g. general" />
+      <div class="row">
+        <button onclick="closeModal('createChannelModal')">Cancel</button>
+        <button class="primary" onclick="createChannel()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // If frontend is served by FastAPI (recommended), keep this empty so it’s same-origin:
+    // const API_BASE = "";
+    // If you're hosting frontend separately, use: "http://127.0.0.1:8000"
+    const API_BASE = "";
+
+    let authToken = localStorage.getItem("token") || "";
+    let currentUser = localStorage.getItem("demo_user") || "User";
+    let currentWorkspaceId = localStorage.getItem("workspace_id") || "";
+    let currentChannelId = null;
+    let ws = null;
+
+    const ui = {
+      userLine: document.getElementById("userLine"),
+      workspaceTitle: document.getElementById("workspaceTitle"),
+      channelsStatus: document.getElementById("channelsStatus"),
+      channelList: document.getElementById("channelList"),
+      roomTitle: document.getElementById("roomTitle"),
+      roomSub: document.getElementById("roomSub"),
+      chatArea: document.getElementById("chatArea"),
+      emptyState: document.getElementById("emptyState"),
+      msg: document.getElementById("msg"),
+      sendBtn: document.getElementById("sendBtn"),
+    };
+
+    // ---------- startup ----------
+    (async function boot(){
+      if(!authToken){
+        // no token => send them to login
+        location.href = "login.html";
+        return;
+      }
+
+      ui.userLine.textContent = "Loading user…";
+      ui.roomSub.textContent = "Loading workspaces…";
+
+      try{
+        const me = await apiGet("/me");
+        currentUser = me.username;
+        ui.userLine.textContent = `Signed in as ${currentUser}`;
+      }catch(e){
+        // token might be invalid/expired
+        console.error(e);
+        logout();
+        return;
+      }
+
+      await ensureWorkspace();
+      await loadChannelsFromBackend();
+      ui.roomSub.textContent = "Pick a channel.";
+    })();
+
+    // ---------- tabs ----------
+    function setTab(tabName, btn){
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+
+      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+      document.getElementById(`page-${tabName}`).classList.add("active");
+
+      document.getElementById("sidePanel").style.display = (tabName === "chat") ? "flex" : "none";
+    }
+
+    // ---------- channels ----------
+    function renderChannels(channels){
+      ui.channelList.innerHTML = "";
+
+      if(!channels || channels.length === 0){
+        const empty = document.createElement("div");
+        empty.style.padding = "12px";
+        empty.style.color = "var(--muted)";
+        empty.style.fontSize = "13px";
+        empty.innerHTML = "No channels yet. Click <b>+ Channel</b> to create one.";
+        ui.channelList.appendChild(empty);
+        ui.channelsStatus.textContent = "0";
+        return;
+      }
+
+      ui.channelsStatus.textContent = String(channels.length);
+
+      channels.forEach(ch => {
+        const div = document.createElement("div");
+        div.className = "channel" + (String(ch.id) === String(currentChannelId) ? " active" : "");
+        div.innerHTML = `# ${escapeHtml(ch.name)}<div class="meta"></div>`;
+        div.onclick = () => selectChannel(ch.id, ch.name);
+        ui.channelList.appendChild(div);
+      });
+    }
+
+    async function selectChannel(channelId, channelName){
+      currentChannelId = channelId;
+
+      ui.roomTitle.textContent = `# ${channelName}`;
+      ui.roomSub.textContent = "Loading messages…";
+      ui.emptyState.style.display = "none";
+
+      ui.msg.disabled = false;
+      ui.sendBtn.disabled = false;
+
+      clearMessages();
+      await loadMessages(channelId);
+      connectWebSocket(channelId);
+
+      ui.roomSub.textContent = "Connected.";
+      // refresh channel highlight
+      await loadChannelsFromBackend();
+    }
+
+    // ---------- messages ----------
+    function clearMessages(){
+      ui.chatArea.innerHTML = "";
+    }
+
+    function addMessageBubble({who, text, me=false, ts=""}){
+      const b = document.createElement("div");
+      b.className = "bubble" + (me ? " me" : "");
+      b.innerHTML = `
+        <div class="who">${escapeHtml(who)}${ts ? " • " + escapeHtml(ts) : ""}</div>
+        <div>${escapeHtml(text)}</div>
+      `;
+      ui.chatArea.appendChild(b);
+      ui.chatArea.scrollTop = ui.chatArea.scrollHeight;
+    }
+
+    async function loadMessages(channelId){
+      try{
+        const rows = await apiGet(`/messages?channel_id=${encodeURIComponent(channelId)}&limit=50`);
+        clearMessages();
+        for(const r of rows){
+          addMessageBubble({
+            who: r.user,
+            text: r.text,
+            me: r.user === currentUser,
+            ts: (r.ts || "").replace("T", " ").slice(0,19)
+          });
+        }
+      }catch(e){
+        console.error(e);
+        ui.roomSub.textContent = "Failed to load messages.";
+      }
+    }
+
+    function sendMessage(){
+      const text = ui.msg.value.trim();
+      if(!text) return;
+      if(!currentChannelId) return alert("Pick a channel first.");
+
+      // Optimistic UI
+      addMessageBubble({ who: currentUser, text, me:true });
+      ui.msg.value = "";
+
+      // WS send (safe)
+      if(ws && ws.readyState === WebSocket.OPEN){
+        ws.send(JSON.stringify({ type:"message", text }));
+      } else {
+        // fallback: tell user we’re not live yet
+        console.warn("WebSocket not connected; message only shown locally.");
+      }
+    }
+
+    // ---------- modals ----------
+    function openModal(id){ document.getElementById(id).style.display = "grid"; }
+    function closeModal(id){ document.getElementById(id).style.display = "none"; }
+
+    async function createChannel(){
+      const name = document.getElementById("newChannelName").value.trim();
+      if(!name) return alert("Enter a channel name.");
+      closeModal("createChannelModal");
+      document.getElementById("newChannelName").value = "";
+
+      try{
+        await apiPost("/channels", { workspace_id: Number(currentWorkspaceId), name });
+        await loadChannelsFromBackend();
+      }catch(e){
+        console.error(e);
+        alert("Failed to create channel. Check console + backend logs.");
+      }
+    }
+
+    // ---------- placeholders ----------
+    function openSearch(){ alert("Search UI later"); }
+    function openMembers(){ alert("Members UI later"); }
+    function startCall(){ alert("Calls later (WebRTC)"); }
+
+    function logout(){
+      localStorage.removeItem("token");
+      localStorage.removeItem("demo_user");
+      localStorage.removeItem("workspace_id");
+      location.href = "index.html";
+    }
+
+    // ---------- backend ----------
+    async function ensureWorkspace(){
+      const workspaces = await apiGet("/workspaces");
+
+      if(workspaces.length === 0){
+        ui.roomSub.textContent = "Creating first workspace…";
+        const wsCreated = await apiPost("/workspaces", { name: "My Workspace" });
+        currentWorkspaceId = String(wsCreated.id);
+      } else {
+        currentWorkspaceId = String(workspaces[0].id); // simplest MVP: use first
+      }
+
+      localStorage.setItem("workspace_id", currentWorkspaceId);
+      ui.workspaceTitle.textContent = "Workspace";
+      ui.roomSub.textContent = "Workspace loaded.";
+    }
+
+    async function loadChannelsFromBackend(){
+      if(!currentWorkspaceId){
+        renderChannels([]);
+        return;
+      }
+      try{
+        const channels = await apiGet(`/channels?workspace_id=${encodeURIComponent(currentWorkspaceId)}`);
+        renderChannels(channels);
+      }catch(e){
+        console.error(e);
+        ui.channelsStatus.textContent = "!";
+      }
+    }
+
+    function connectWebSocket(channelId){
+      // close old socket if switching channels
+      try{ if(ws) ws.close(); }catch(_){}
+
+      const proto = (location.protocol === "https:") ? "wss" : "ws";
+      const host = location.host || "127.0.0.1:8000";
+      const wsUrl = `${proto}://${host}/ws?token=${encodeURIComponent(authToken)}&channel_id=${encodeURIComponent(channelId)}`;
+
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (ev) => {
+        try{
+          const msg = JSON.parse(ev.data);
+
+          if(msg.type === "system"){
+            addMessageBubble({ who: "System", text: msg.text || "", me:false, ts:(msg.ts||"").slice(0,19).replace("T"," ") });
+            return;
+          }
+
+          if(msg.type === "message"){
+            addMessageBubble({
+              who: msg.user || "User",
+              text: msg.text || "",
+              me: (msg.user === currentUser),
+              ts: (msg.ts || "").slice(0,19).replace("T"," ")
+            });
+          }
+        }catch(e){
+          console.error("Bad WS message", e, ev.data);
+        }
+      };
+
+      ws.onclose = () => {
+        console.warn("WebSocket closed");
+      };
+
+      ws.onerror = (e) => {
+        console.error("WebSocket error", e);
+      };
+    }
+
+    async function apiGet(path){
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { "Authorization": `Bearer ${authToken}` }
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return await res.json();
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`
+        },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return await res.json();
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Collab - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{--bg:#0f111a;--panel:#161a26;--text:#e8eaf1;--muted:#aab0c0;--accent:#6d5efc;--border:#2a3146;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,Segoe UI,Arial;background:var(--bg);color:var(--text);min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{width:min(520px,100%);background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:18px}
+    h1{margin:8px 0 4px}
+    p{margin:0 0 14px;color:var(--muted)}
+    label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+    input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0f1320;color:var(--text)}
+    .row{display:flex;gap:10px;margin-top:14px}
+    button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:#1b2030;color:var(--text);cursor:pointer;font-weight:700}
+    .primary{border:none;background:linear-gradient(135deg,#6d5efc,#8b7dff)}
+    a{color:#b8b1ff}
+    .tiny{font-size:12px;color:var(--muted);margin-top:10px}
+    .err{margin-top:10px;color:#ffb4b4;font-size:13px;display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Login</h1>
+    <p>Welcome back.</p>
+
+    <label>Username</label>
+    <input id="user" placeholder="e.g. alex" autocomplete="username" />
+
+    <label>Password</label>
+    <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+    <div class="row">
+      <button onclick="location.href='index.html'">Back</button>
+      <button class="primary" id="loginBtn" onclick="login()">Login</button>
+    </div>
+
+    <div class="err" id="errBox"></div>
+    <div class="tiny">No account? <a href="register.html">Register</a></div>
+  </div>
+
+  <script>
+    // If frontend is served by FastAPI (http://127.0.0.1:8000/login.html), keep empty for same-origin:
+    const API_BASE = "150.230.127.214:2022";
+    // If you're running frontend on a separate server (like Live Server :5500), use:
+    // const API_BASE = "http://127.0.0.1:8000";
+
+    const errBox = document.getElementById("errBox");
+    const loginBtn = document.getElementById("loginBtn");
+
+    // Enter-to-submit
+    document.getElementById("pass").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") login();
+    });
+
+    function showError(msg){
+      errBox.textContent = msg;
+      errBox.style.display = "block";
+    }
+
+    function clearError(){
+      errBox.textContent = "";
+      errBox.style.display = "none";
+    }
+
+    async function login(){
+      clearError();
+
+      const username = document.getElementById("user").value.trim();
+      const password = document.getElementById("pass").value;
+
+      if(!username) return showError("Please enter your username.");
+      if(!password) return showError("Please enter your password.");
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Logging in...";
+
+      try{
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        if(!res.ok){
+          // FastAPI returns JSON with "detail" for errors
+          let msg = "Login failed.";
+          try{
+            const data = await res.json();
+            msg = data.detail || msg;
+          }catch{
+            msg = await res.text();
+          }
+          throw new Error(msg);
+        }
+
+        const data = await res.json();
+        if(!data.access_token) throw new Error("No access_token returned from server.");
+
+        // Save token + username for app.html
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("demo_user", username);
+
+        location.href = "app.html";
+      }catch(e){
+        console.error(e);
+        showError(e.message || "Login error.");
+      }finally{
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login";
+      }
+    }
+  </script>
+</body>
+</html>
